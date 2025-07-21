@@ -17,7 +17,7 @@ type LoginResponse struct {
 	AuthToken string    `json:"auth_token"`
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	req := LoginRequest{}
 	json.NewDecoder(r.Body).Decode(&req)
 

@@ -1,15 +1,19 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type apiConfig struct {
 	CurrentUserID uuid.UUID
 	AuthToken     string
 	APIBaseURL    string
+	db            *sql.DB
 }
 
 type bag struct {
@@ -45,8 +49,34 @@ var allPossibleClubs = []club{
 	{"Putter", "Putter", 0, false},
 }
 
+func initDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "golf_logger.db")
+	if err != nil {
+		log.Fatal("cannot open db: ", err)
+	}
+
+	createTable := `
+	CREATE TABLE IF NOT EXISTS users (
+		id TEXT PRIMARY KEY,
+		username TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL
+	);`
+
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatal("cannot create users: ", err)
+	}
+	return db
+}
+
 func main() {
-	http.HandleFunc("/api/login", loginHandler)
+	db := initDB()
+
+	cfg := apiConfig{
+		db: db,
+	}
+
+	http.HandleFunc("/api/login", cfg.loginHandler)
 
 	http.ListenAndServe(":8080", nil)
 }

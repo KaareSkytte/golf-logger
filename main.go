@@ -56,6 +56,7 @@ func main() {
 	}
 
 	http.HandleFunc("/api/login", cfg.loginHandler)
+	http.HandleFunc("/api/register", cfg.handlerRegister)
 
 	http.ListenAndServe(":8080", nil)
 }

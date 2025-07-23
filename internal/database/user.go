@@ -12,13 +12,14 @@ type CreateUserParams struct {
 }
 
 type User struct {
-	ID    string
-	Email string
+	ID           string
+	Email        string
+	PasswordHash string
 }
 
 func (db *DB) CreateUser(params CreateUserParams) (*User, error) {
 	var exists int
-	err := db.conn.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", params.Email).Scan(&exists)
+	err := db.conn.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", params.Email).Scan(&exists)
 	if err != nil {
 		return nil, err
 	}
@@ -27,11 +28,23 @@ func (db *DB) CreateUser(params CreateUserParams) (*User, error) {
 	}
 
 	id := uuid.New().String()
-	_, err = db.conn.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
+	_, err = db.conn.Exec("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)",
 		id, params.Email, params.Password)
 	if err != nil {
 		return nil, err
 	}
 
 	return &User{ID: id, Email: params.Email}, nil
+}
+
+func (db *DB) FindUserByEmail(email string) (*User, error) {
+	user := &User{}
+	err := db.conn.QueryRow(
+		"SELECT id, email, password_hash FROM users WHERE email = ?",
+		email,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }

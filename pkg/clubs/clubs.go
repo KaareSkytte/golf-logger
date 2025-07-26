@@ -1,12 +1,5 @@
 package clubs
 
-import "github.com/google/uuid"
-
-type Bag struct {
-	PlayerID uuid.UUID
-	Clubs    []Club
-}
-
 type Club struct {
 	ClubName string
 	ClubType string

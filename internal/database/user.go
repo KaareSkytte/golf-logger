@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/kaareskytte/golf-logger/pkg/clubs"
 )
 
 type CreateUserParams struct {
@@ -32,6 +33,22 @@ func (db *DB) CreateUser(params CreateUserParams) (*User, error) {
 		id, params.Email, params.Password)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, club := range clubs.AllPossibleClubs {
+		_, err := db.conn.Exec(`
+            INSERT INTO user_clubs (id, user_id, club_name, club_type, distance, in_bag)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+			uuid.New().String(),
+			id,
+			club.ClubName,
+			club.ClubType,
+			club.Distance,
+			club.InBag,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &User{ID: id, Email: params.Email}, nil

@@ -29,13 +29,13 @@ func InitDB() *DB {
 
 	createTable = `
 	CREATE TABLE IF NOT EXISTS user_clubs (
-		id TEXT PRIMARY KEY,         -- unique UUID for this club entry
-		user_id TEXT NOT NULL,       -- FK reference to users.id
-		club_name TEXT NOT NULL,     -- e.g. "7-iron", "Driver"
-		club_type TEXT NOT NULL,     -- e.g. "Iron", "Wood", "Wedge"
-		distance INTEGER NOT NULL,   -- user-set shot distance
-		in_bag BOOLEAN NOT NULL,     -- true if it's in bag, false otherwise
-		UNIQUE(user_id, club_name),  -- ensures each club can only be added once per user
+		id TEXT PRIMARY KEY,         
+		user_id TEXT NOT NULL,       
+		club_name TEXT NOT NULL,     
+		club_type TEXT NOT NULL,     
+		distance INTEGER NOT NULL,   
+		in_bag BOOLEAN NOT NULL,     
+		UNIQUE(user_id, club_name),  
 		FOREIGN KEY(user_id) REFERENCES users(id)
 	);`
 

@@ -8,7 +8,7 @@ type Club struct {
 }
 
 var AllPossibleClubs = []Club{
-	{"Driver", "Wood", 0, false},
+	{"Driver", "Driver", 0, false},
 	{"3-wood", "Wood", 0, false},
 	{"5-wood", "Wood", 0, false},
 	{"Hybrid-3", "Hybrid", 0, false},

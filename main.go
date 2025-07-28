@@ -24,7 +24,8 @@ func main() {
 
 	http.HandleFunc("/api/login", cfg.loginHandler)
 	http.HandleFunc("/api/register", cfg.handlerRegister)
-	http.HandleFunc("/api/bag", cfg.handlerGetBag)
+	http.HandleFunc("/api/bag", cfg.handlerGetUserBag)
+	http.HandleFunc("/api/bag/full", cfg.handlerGetFullBag)
 	http.HandleFunc("/api/bag/club", cfg.handlerChangeClubStatus)
 	http.HandleFunc("/api/bag/distance", cfg.handlerChangeClubDistance)
 

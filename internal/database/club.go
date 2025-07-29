@@ -65,3 +65,14 @@ func (db *DB) UpdateClubDistance(userID, clubName string, distance int) error {
 		distance, userID, clubName)
 	return err
 }
+
+func (db *DB) GetClubDistance(userID, clubName string) (int, error) {
+	var distance int
+
+	err := db.conn.QueryRow(`SELECT distance FROM user_clubs WHERE user_id = ? AND club_name = ?`, userID, clubName).Scan(&distance)
+	if err != nil {
+		return 0, err
+	}
+
+	return distance, nil
+}

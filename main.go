@@ -28,6 +28,7 @@ func main() {
 	http.HandleFunc("/api/bag/full", cfg.handlerGetFullBag)
 	http.HandleFunc("/api/bag/club", cfg.handlerChangeClubStatus)
 	http.HandleFunc("/api/bag/distance", cfg.handlerChangeClubDistance)
+	http.HandleFunc("/api/club/distance", cfg.handlerGetClubDistance)
 
 	http.ListenAndServe(":8080", nil)
 }

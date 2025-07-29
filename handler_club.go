@@ -75,3 +75,37 @@ func (cfg *apiConfig) handlerChangeClubDistance(w http.ResponseWriter, r *http.R
 
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
+
+func (cfg *apiConfig) handlerGetClubDistance(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Missing or invalid auth token", err)
+		return
+	}
+
+	secret := os.Getenv("GOLF_LOGGER_SECRET_TOKEN")
+	userID, err := auth.ValidateJWT(token, secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token", err)
+		return
+	}
+
+	clubName := r.URL.Query().Get("clubName")
+	if clubName == "" {
+		respondWithError(w, http.StatusBadRequest, "Missing clubName parameter", nil)
+		return
+	}
+
+	distance, err := cfg.db.GetClubDistance(userID.String(), clubName)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Club not found or no distance set", err)
+		return
+	}
+
+	type response struct {
+		ClubName string `json:"clubName"`
+		Distance int    `json:"distance"`
+	}
+
+	respondWithJSON(w, http.StatusOK, response{ClubName: clubName, Distance: distance})
+}

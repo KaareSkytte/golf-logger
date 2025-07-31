@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -63,27 +65,27 @@ func login(email, password string, errorLabel *widget.Label, win fyne.Window) {
 	}()
 }
 
-func register(email, password string, errorLabel *widget.Label, win fyne.Window) {
+func register(email, password string, msgLabel *widget.Label, win fyne.Window) {
 	payload := map[string]string{
 		"email":    email,
 		"password": password,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
-		errorLabel.SetText("Error encoding credentials")
+		msgLabel.SetText("Error encoding credentials")
 		return
 	}
 
 	go func() {
 		resp, err := http.Post("http://localhost:8080/api/register", "application/json", bytes.NewBuffer(data))
 		if err != nil {
-			errorLabel.SetText("Unable to reach server")
+			msgLabel.SetText("Unable to reach server")
 			return
 		}
 		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		if resp.StatusCode != 201 {
-			errorLabel.SetText(fmt.Sprintf("Register failed: %s", body))
+			msgLabel.SetText(fmt.Sprintf("Register failed: %s", body))
 			return
 		}
 		msg := "Registration successful! Ready to Login."
@@ -98,13 +100,13 @@ func makeRegisterScreen(win fyne.Window) fyne.CanvasObject {
 	passwordEntry := widget.NewEntry()
 	passwordEntry.SetPlaceHolder("Password")
 
-	errorLabel := widget.NewLabel("")
+	msgLabel := widget.NewLabel("")
 
 	registerBtn := widget.NewButton("Register Now", func() {
 		email := emailEntry.Text
 		password := passwordEntry.Text
 
-		register(email, password, errorLabel, win)
+		register(email, password, msgLabel, win)
 
 	})
 
@@ -112,13 +114,19 @@ func makeRegisterScreen(win fyne.Window) fyne.CanvasObject {
 		win.SetContent(makeLoginScreen(win, ""))
 	})
 
-	return container.NewVBox(
+	form := container.NewVBox(
 		widget.NewLabel("Register for Golf Logger"),
 		emailEntry,
 		passwordEntry,
 		registerBtn,
 		backBtn,
-		errorLabel,
+		msgLabel,
+	)
+
+	return container.NewVBox(
+		layout.NewSpacer(),
+		container.NewCenter(form),
+		layout.NewSpacer(),
 	)
 }
 
@@ -129,25 +137,31 @@ func makeLoginScreen(win fyne.Window, msg string) fyne.CanvasObject {
 	passwordEntry := widget.NewEntry()
 	passwordEntry.SetPlaceHolder("Password")
 
-	errorLabel := widget.NewLabel(msg)
+	msgLabel := widget.NewLabel(msg)
 
 	loginBtn := widget.NewButton("Login", func() {
 		email := emailEntry.Text
 		password := passwordEntry.Text
 
-		login(email, password, errorLabel, win)
+		login(email, password, msgLabel, win)
 	})
 
 	registerBtn := widget.NewButton("Register", func() {
 		win.SetContent(makeRegisterScreen(win))
 	})
 
-	return container.NewVBox(
-		widget.NewLabel("Register for Golf Logger"),
+	form := container.NewVBox(
+		widget.NewLabel("Welcome to Golf Logger"),
 		emailEntry,
 		passwordEntry,
 		loginBtn,
 		registerBtn,
-		errorLabel,
+		msgLabel,
+	)
+
+	return container.NewVBox(
+		layout.NewSpacer(),
+		container.NewCenter(form),
+		layout.NewSpacer(),
 	)
 }

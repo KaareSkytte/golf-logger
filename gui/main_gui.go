@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"fyne.io/fyne/v2"
@@ -43,7 +42,7 @@ func login(email, password string, errorLabel *widget.Label, win fyne.Window) {
 			return
 		}
 		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 
 		if resp.StatusCode != 200 {
 			errorLabel.SetText(fmt.Sprintf("Login failed: %s", body))
@@ -61,7 +60,7 @@ func login(email, password string, errorLabel *widget.Label, win fyne.Window) {
 
 		// Success! Update UI
 		errorLabel.SetText("Login Successful!")
-		// win.SetContent(makeBagScreen(win, loginResp.AuthToken))
+		win.SetContent(makeMenuScreen(win, loginResp.AuthToken))
 	}()
 }
 
@@ -157,6 +156,30 @@ func makeLoginScreen(win fyne.Window, msg string) fyne.CanvasObject {
 		loginBtn,
 		registerBtn,
 		msgLabel,
+	)
+
+	return container.NewVBox(
+		layout.NewSpacer(),
+		container.NewCenter(form),
+		layout.NewSpacer(),
+	)
+}
+
+func makeMenuScreen(win fyne.Window, authToken string) fyne.CanvasObject {
+	bagBtn := widget.NewButton("My Bag", func() {
+		win.SetContent(makeBagScreen(win, authToken))
+	})
+	rangeMapBtn := widget.NewButton("Range Map", func() {
+		//win.SetContent(makeRangeMapScreen(win, authToken))
+	})
+	logoutBtn := widget.NewButton("Log Out", func() {
+		win.SetContent(makeLoginScreen(win, ""))
+	})
+
+	form := container.NewVBox(
+		bagBtn,
+		rangeMapBtn,
+		logoutBtn,
 	)
 
 	return container.NewVBox(

@@ -10,6 +10,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -80,6 +81,39 @@ func getAllClubs(authToken string) ([]Club, error) {
 	return clubs, nil
 }
 
+func setDistance(authToken, clubName string, distance int) error {
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"clubName": clubName,
+		"distance": distance,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to encode body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", "http://localhost:8080/api/bag/distance", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+authToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
 func addRemoveFromBag(authToken, clubName string, inBag bool) error {
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"clubName": clubName,
@@ -109,46 +143,6 @@ func addRemoveFromBag(authToken, clubName string, inBag bool) error {
 	}
 
 	return nil
-}
-
-func makeBagScreen(win fyne.Window, authToken string) fyne.CanvasObject {
-	tabs := container.NewAppTabs(
-		container.NewTabItem("My Bag", makeMyBagTab(win, authToken)),
-		container.NewTabItem("All Clubs", makeAllClubsTab(win, authToken)),
-	)
-	backBtn := widget.NewButton("Back", func() {
-		win.SetContent(makeMenuScreen(win, authToken))
-	})
-
-	form := container.NewVBox(
-		tabs,
-		backBtn,
-	)
-	return form
-}
-
-func makeMyBagTab(win fyne.Window, authToken string) fyne.CanvasObject {
-	clubsLabel := widget.NewLabel("loading...")
-	content := container.NewVBox(clubsLabel)
-
-	go func() {
-		clubs, err := getMyBag(authToken)
-		if err != nil {
-			clubsLabel.SetText(fmt.Sprintf("Error: %v", err))
-			return
-		}
-
-		clubList := make([]fyne.CanvasObject, 0, len(clubs))
-		for _, c := range clubs {
-			clubList = append(clubList,
-				widget.NewLabel(fmt.Sprintf("%s (%s): %d m", c.ClubName, c.ClubType, c.Distance)),
-			)
-		}
-		content.Objects = clubList
-		content.Refresh()
-	}()
-
-	return content
 }
 
 func categorizeClubs(clubs []Club) map[string][]Club {
@@ -182,6 +176,59 @@ func buildClubRow(c Club, authToken string, refresh func()) fyne.CanvasObject {
 	)
 }
 
+func buildClubRowBag(win fyne.Window, c Club, authToken string, refresh func()) fyne.CanvasObject {
+	btnLabel := "Set Distance"
+
+	setDistanceBtn := widget.NewButton(btnLabel, func() {
+		entry := widget.NewEntry()
+		entry.SetPlaceHolder(fmt.Sprintf("%d", c.Distance))
+		form := dialog.NewForm(
+			fmt.Sprintf("Set distance for %s", c.ClubName),
+			"Set",
+			"Cancel",
+			[]*widget.FormItem{
+				widget.NewFormItem("Distance", entry),
+			},
+			func(ok bool) {
+				if ok {
+					var newDist int
+					_, err := fmt.Sscanf(entry.Text, "%d", &newDist)
+					if err == nil && newDist > 0 {
+						go func() {
+							setDistance(authToken, c.ClubName, newDist)
+							refresh()
+						}()
+					}
+				}
+			},
+			win,
+		)
+		form.Resize(fyne.NewSize(250, 120))
+		form.Show()
+	})
+
+	return container.NewHBox(
+		widget.NewLabel(fmt.Sprintf("%s: %d m", c.ClubName, c.Distance)),
+		setDistanceBtn,
+	)
+}
+
+func makeBagScreen(win fyne.Window, authToken string) fyne.CanvasObject {
+	tabs := container.NewAppTabs(
+		container.NewTabItem("My Bag", makeMyBagTab(win, authToken)),
+		container.NewTabItem("All Clubs", makeAllClubsTab(win, authToken)),
+	)
+	backBtn := widget.NewButton("Back", func() {
+		win.SetContent(makeMenuScreen(win, authToken))
+	})
+
+	form := container.NewVBox(
+		tabs,
+		backBtn,
+	)
+	return form
+}
+
 func makeAllClubsTab(win fyne.Window, authToken string) fyne.CanvasObject {
 	content := container.NewVBox(widget.NewLabel("loading..."))
 
@@ -203,6 +250,42 @@ func makeAllClubsTab(win fyne.Window, authToken string) fyne.CanvasObject {
 					ui = append(ui, widget.NewLabelWithStyle(t, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 					for _, c := range list {
 						row := buildClubRow(c, authToken, refresh)
+						ui = append(ui, row)
+					}
+				}
+			}
+			time.AfterFunc(0, func() {
+				content.Objects = ui
+				content.Refresh()
+			})
+		}()
+	}
+	refresh()
+	return content
+}
+
+func makeMyBagTab(win fyne.Window, authToken string) fyne.CanvasObject {
+	clubsLabel := widget.NewLabel("loading...")
+	content := container.NewVBox(clubsLabel)
+
+	var refresh func()
+	refresh = func() {
+		go func() {
+			clubs, err := getMyBag(authToken)
+			ui := []fyne.CanvasObject{}
+			if err != nil {
+				ui = append(ui, widget.NewLabel(fmt.Sprintf("Error: %v", err)))
+			} else {
+				clubsByType := categorizeClubs(clubs)
+				for _, t := range typeOrder {
+					list := clubsByType[t]
+					if len(list) == 0 {
+						continue
+					}
+
+					ui = append(ui, widget.NewLabelWithStyle(t, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+					for _, c := range list {
+						row := buildClubRowBag(win, c, authToken, refresh)
 						ui = append(ui, row)
 					}
 				}

@@ -173,7 +173,7 @@ func makeMenuScreen(win fyne.Window, authToken string) fyne.CanvasObject {
 		//win.SetContent(makeRangeMapScreen(win, authToken))
 	})
 	logoutBtn := widget.NewButton("Log Out", func() {
-		win.SetContent(makeLoginScreen(win, ""))
+		win.SetContent(makeLoginScreen(win, "You've logged out..."))
 	})
 
 	form := container.NewVBox(

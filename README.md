@@ -4,7 +4,7 @@
 
 Golf Logger er en desktop-applikation til at administrere din golftaske og holde styr på personlige slaglængder.
 
-Projektet er bygget som en praktisk demonstration af moderne client-server arkitektur, GUI-design og API-integration.
+Projektet er bygget som en praktisk demonstration af moderne client-server arkitektur.
 
 ---
 

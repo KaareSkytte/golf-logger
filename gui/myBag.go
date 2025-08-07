@@ -236,28 +236,31 @@ func makeAllClubsTab(win fyne.Window, authToken string) fyne.CanvasObject {
 	refresh = func() {
 		go func() {
 			clubs, err := getAllClubs(authToken)
-			ui := []fyne.CanvasObject{}
-			if err != nil {
-				ui = append(ui, widget.NewLabel(fmt.Sprintf("Error: %v", err)))
-			} else {
-				clubsByType := categorizeClubs(clubs)
-				for _, t := range typeOrder {
-					list := clubsByType[t]
-					if len(list) == 0 {
-						continue
-					}
+			clubsByType := categorizeClubs(clubs)
+			typeErr := err
 
-					ui = append(ui, widget.NewLabelWithStyle(t, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-					for _, c := range list {
-						row := buildClubRow(c, authToken, refresh)
-						ui = append(ui, row)
+			time.AfterFunc(0, func() {
+				ui := []fyne.CanvasObject{}
+				if typeErr != nil {
+					ui = append(ui, widget.NewLabel(fmt.Sprintf("Error: %v", err)))
+				} else {
+					for _, t := range typeOrder {
+						list := clubsByType[t]
+						if len(list) == 0 {
+							continue
+						}
+
+						ui = append(ui, widget.NewLabelWithStyle(t, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+						for _, c := range list {
+							row := buildClubRow(c, authToken, refresh)
+							ui = append(ui, row)
+						}
 					}
 				}
-			}
-			time.AfterFunc(0, func() {
 				content.Objects = ui
 				content.Refresh()
 			})
+
 		}()
 	}
 	refresh()
@@ -272,25 +275,27 @@ func makeMyBagTab(win fyne.Window, authToken string) fyne.CanvasObject {
 	refresh = func() {
 		go func() {
 			clubs, err := getMyBag(authToken)
-			ui := []fyne.CanvasObject{}
-			if err != nil {
-				ui = append(ui, widget.NewLabel(fmt.Sprintf("Error: %v", err)))
-			} else {
-				clubsByType := categorizeClubs(clubs)
-				for _, t := range typeOrder {
-					list := clubsByType[t]
-					if len(list) == 0 {
-						continue
-					}
+			clubsByType := categorizeClubs(clubs)
+			typeErr := err
 
-					ui = append(ui, widget.NewLabelWithStyle(t, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-					for _, c := range list {
-						row := buildClubRowBag(win, c, authToken, refresh)
-						ui = append(ui, row)
+			time.AfterFunc(0, func() {
+				ui := []fyne.CanvasObject{}
+				if typeErr != nil {
+					ui = append(ui, widget.NewLabel(fmt.Sprintf("Error: %v", err)))
+				} else {
+					for _, t := range typeOrder {
+						list := clubsByType[t]
+						if len(list) == 0 {
+							continue
+						}
+
+						ui = append(ui, widget.NewLabelWithStyle(t, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+						for _, c := range list {
+							row := buildClubRowBag(win, c, authToken, refresh)
+							ui = append(ui, row)
+						}
 					}
 				}
-			}
-			time.AfterFunc(0, func() {
 				content.Objects = ui
 				content.Refresh()
 			})

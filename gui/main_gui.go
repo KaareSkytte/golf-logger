@@ -85,13 +85,17 @@ func register(email, password string, msgLabel *widget.Label, win fyne.Window) {
 	go func() {
 		resp, err := http.Post("http://localhost:8080/api/register", "application/json", bytes.NewBuffer(data))
 		if err != nil {
-			msgLabel.SetText("Unable to reach server")
+			time.AfterFunc(0, func() {
+				msgLabel.SetText("Unable to reach server")
+			})
 			return
 		}
 		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
 		if resp.StatusCode != 201 {
-			msgLabel.SetText(fmt.Sprintf("Register failed: %s", body))
+			time.AfterFunc(0, func() {
+				msgLabel.SetText(fmt.Sprintf("Register failed: %s", body))
+			})
 			return
 		}
 		time.AfterFunc(0, func() {
@@ -106,7 +110,7 @@ func makeRegisterScreen(win fyne.Window) fyne.CanvasObject {
 	emailEntry := widget.NewEntry()
 	emailEntry.SetPlaceHolder("Email")
 
-	passwordEntry := widget.NewEntry()
+	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetPlaceHolder("Password")
 
 	msgLabel := widget.NewLabel("")
@@ -143,7 +147,7 @@ func makeLoginScreen(win fyne.Window, msg string) fyne.CanvasObject {
 	emailEntry := widget.NewEntry()
 	emailEntry.SetPlaceHolder("Email")
 
-	passwordEntry := widget.NewEntry()
+	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetPlaceHolder("Password")
 
 	msgLabel := widget.NewLabel(msg)

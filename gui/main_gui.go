@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -38,14 +39,18 @@ func login(email, password string, errorLabel *widget.Label, win fyne.Window) {
 	go func() {
 		resp, err := http.Post("http://localhost:8080/api/login", "application/json", bytes.NewBuffer(data))
 		if err != nil {
-			errorLabel.SetText("Unable to reach server")
+			time.AfterFunc(0, func() {
+				errorLabel.SetText("Unable to reach server")
+			})
 			return
 		}
 		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
 
 		if resp.StatusCode != 200 {
-			errorLabel.SetText(fmt.Sprintf("Login failed: %s", body))
+			time.AfterFunc(0, func() {
+				errorLabel.SetText(fmt.Sprintf("Login failed: %s", body))
+			})
 			return
 		}
 
@@ -54,13 +59,15 @@ func login(email, password string, errorLabel *widget.Label, win fyne.Window) {
 			AuthToken string `json:"auth_token"`
 		}
 		if err := json.Unmarshal(body, &loginResp); err != nil {
-			errorLabel.SetText("Bad response from server")
+			time.AfterFunc(0, func() {
+				errorLabel.SetText("Bad response from server")
+			})
 			return
 		}
 
-		// Success! Update UI
-		errorLabel.SetText("Login Successful!")
-		win.SetContent(makeMenuScreen(win, loginResp.AuthToken))
+		time.AfterFunc(0, func() {
+			win.SetContent(makeMenuScreen(win, loginResp.AuthToken))
+		})
 	}()
 }
 
@@ -87,8 +94,11 @@ func register(email, password string, msgLabel *widget.Label, win fyne.Window) {
 			msgLabel.SetText(fmt.Sprintf("Register failed: %s", body))
 			return
 		}
-		msg := "Registration successful! Ready to Login."
-		win.SetContent(makeLoginScreen(win, msg))
+		time.AfterFunc(0, func() {
+			msg := "Registration successful! Ready to Login."
+			win.SetContent(makeLoginScreen(win, msg))
+		})
+
 	}()
 }
 
@@ -166,11 +176,12 @@ func makeLoginScreen(win fyne.Window, msg string) fyne.CanvasObject {
 }
 
 func makeMenuScreen(win fyne.Window, authToken string) fyne.CanvasObject {
+	msgLabel := widget.NewLabel("")
 	bagBtn := widget.NewButton("My Bag", func() {
 		win.SetContent(makeBagScreen(win, authToken))
 	})
 	rangeMapBtn := widget.NewButton("Range Map", func() {
-		//win.SetContent(makeRangeMapScreen(win, authToken))
+		msgLabel.SetText("Feature coming soon...")
 	})
 	logoutBtn := widget.NewButton("Log Out", func() {
 		win.SetContent(makeLoginScreen(win, "You've logged out..."))
@@ -180,6 +191,7 @@ func makeMenuScreen(win fyne.Window, authToken string) fyne.CanvasObject {
 		bagBtn,
 		rangeMapBtn,
 		logoutBtn,
+		msgLabel,
 	)
 
 	return container.NewVBox(

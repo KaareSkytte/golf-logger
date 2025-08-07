@@ -170,7 +170,7 @@ func buildClubRow(c Club, authToken string, refresh func()) fyne.CanvasObject {
 		widget.NewButton(btnLabel, func() {
 			go func() {
 				addRemoveFromBag(authToken, c.ClubName, newStatus)
-				refresh()
+				time.AfterFunc(0, func() { refresh() })
 			}()
 		}),
 	)
@@ -196,7 +196,7 @@ func buildClubRowBag(win fyne.Window, c Club, authToken string, refresh func()) 
 					if err == nil && newDist > 0 {
 						go func() {
 							setDistance(authToken, c.ClubName, newDist)
-							refresh()
+							time.AfterFunc(0, func() { refresh() })
 						}()
 					}
 				}
